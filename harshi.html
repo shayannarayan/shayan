@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="myapp">
+<head>
+  <title>Bootstrap Example</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+   <script src="https://code.angularjs.org/1.4.8/angular.js" data-semver="1.4.8"></script>
+      <script src="lodash.js"></script>
+   <script src="restangular.js"></script>
+
+   
+   <script>
+   	var app = angular.module('myapp', ['restangular']);
+	app.config(function(RestangularProvider) {
+    RestangularProvider.setBaseUrl('http://192.168.0.202:8080/CxfRestService/rest/dhc');
+	})
+	app.controller('ListController', ['$scope','Restangular', function($scope,Restangular) {
+    $scope.personalDetails = [
+        {
+            'Medication':'',
+            'Unit':'',
+            'Qty':''
+        }
+       ];
+    
+        $scope.addNew = function(personalDetail){
+            $scope.personalDetails.push({ 
+                'Medication': "", 
+                'Unit': "",
+                'Qty': "",
+            });
+        };
+    
+        $scope.remove = function(){
+            var newDataList=[];
+            $scope.selectedAll = false;
+            angular.forEach($scope.personalDetails, function(selected){
+                if(!selected.selected){
+                    newDataList.push(selected);
+                }
+            }); 
+            $scope.personalDetails = newDataList;
+        };
+    
+    $scope.checkAll = function () {
+        if (!$scope.selectedAll) {
+            $scope.selectedAll = true;
+        } else {
+            $scope.selectedAll = false;
+        }
+        angular.forEach($scope.personalDetails, function(personalDetail) {
+            personalDetail.selected = $scope.selectedAll;
+        });
+    };  
+$scope.data={
+ "appointmentId":"",
+"symptoms":"",
+"disease":"",
+"prescriptions":"",
+"status":"true",
+"documentid":"1",
+"touserid":"1",
+"byuserid":"2" 
+}	
+         
+  $scope.save=function(){
+		        Restangular.all('SavePrescription').post($scope.data).then(function(response){
+		           $scope.result = response; 
+})
+}				   
+    
+}]);
+app.directive("fileread", [ //image uploading and converted into base64
+  function() {
+    return {
+      scope: {
+        fileread: "="
+      },
+      link: function(scope, element, attributes) {
+        element.bind("change", function(changeEvent) {
+          var reader = new FileReader();
+          reader.onload = function(loadEvent) {
+            scope.$apply(function() {
+              scope.fileread = loadEvent.target.result.replace(/^data:image\/(png|jpeg);base64,/g, "");
+
+            });
+
+          }
+          reader.readAsDataURL(changeEvent.target.files[0]);
+        });
+      }
+    }
+  }
+]);
+
+app.directive('imageOrDefault', function (Utils) { //default image
+  return {
+    restrict: 'A',
+    link: function (scope, element, attrs) {
+      console.log(attrs);
+      Utils.isImage(attrs.imageOrDefault)
+        .then(function(result) {
+          attrs.$set('src', result);
+        });
+    }
+  }
+});
+app.factory('Utils', function($q) {
+    return {
+        isImage: function(src) {
+            var deferred = $q.defer();
+
+            var image = new Image();
+            image.onerror = function() {
+                deferred.resolve('yourDefaultImagePath');
+            };
+            image.onload = function() {
+                deferred.resolve(image.src);
+            };
+            image.src = src;
+
+            return deferred.promise;
+        }
+    };
+});
+   </script>
+  <style>
+  body {
+    background-color: lightblue;
+}
+  input[type="text"] {
+  align:left;
+height: 30px;
+width: 250px;
+ 
+}
+.btn-primary{
+    margin-right: 10px;
+}
+.container{
+  margin: 20px 0;
+}
+
+</style>
+</head>
+<body ng-controller="ListController"> 
+
+<div class="container">
+ 
+    <div class="form-group">
+	{{result}}
+	<label for="usr">patientID:</label>
+     <input type="text" class="form-control" ng-model="data.appointmentId" id="usr"><br/>
+	 {{data.appointmentId}}
+	 <label for="usr">symptoms:</label>
+	<textarea class="form-control" ng-model="data.symptoms" rows="5" id="pre"></textarea></br>
+	 {{data.symptoms}}
+	 <label for="usr">disease:</label>
+	 <textarea class="form-control" ng-model="data.disease" rows="5" id="pre"></textarea></br>
+	 {{data.disease}}
+	 <label for="pre">prescriptions:</label>
+  <textarea class="form-control" ng-model="data.prescriptions" rows="5" id="pre"></textarea></br>
+  {{data.prescriptions}}
+  <h1>not yet be implemented</h1>
+  <label for="pre1">prescription:</label>
+  <div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <form ng-submit="addNew()">
+                            <table class="table table-striped table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox" ng-model="selectedAll" ng-click="checkAll()" /></th>
+                                        <th>Medication List</th>
+                                        <th>Unit</th>
+                                        <th>Qty</th>
+										<th><input type="checkbox" value="">
+										<input type="checkbox" value="">
+										<input type="checkbox" value=""></th> 
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="personalDetail in personalDetails">
+                                        <td>
+                                            <input type="checkbox" ng-model="personalDetail.selected"/></td>
+                                        <td>
+                                            <input type="text" class="form-control" ng-model="personalDetail.fname" required/></td>
+                                        <td>
+                                            <input type="text" class="form-control" ng-model="personalDetail.lname" required/></td>
+                                        <td>
+                                            <input type="text" class="form-control" ng-model="personalDetail.email" required/></td>
+                                   <td></td>
+								   </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="form-group">
+                                <input ng-hide="!personalDetails.length" type="button" class="btn btn-danger pull-right" ng-click="remove()" value="Remove">
+                                <input type="submit" class="btn btn-primary addnew pull-right" value="Add New">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+  <label for="rec">Reconsultation:</label>
+  <label class="checkbox-inline"><input type="checkbox" ng-model="data.Reconsultation2" value="">yes</label>
+<label class="checkbox-inline"><input type="checkbox" ng-model="data.Reconsultation" value="">no</label><br><br><br>
+  
+  <div style="text-align:center" class="image-upload">
+							<label for="fileToUpload" >
+									<input type="file" value="Browse" fileread="data.image" ng-model="data.image"  id="fileToUpload" style="display:none;" />
+									<img  class="img-thumbnail" image-or-default="image.jpg" ng-src="data:image/(png|jpeg);base64,{{data.image}}" alt="Image">
+							</label>
+					</div>
+<center>
+  <button type="button" ng-click="save()" class="btn btn-primary">Save</button>
+  </center>
+    </div>
+	
+</div>
+</body>
+</html>
+
